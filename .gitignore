@@ -1,0 +1,56 @@
+# Project Assets
+# ==============
+tests/integration/credentials.json
+dist/
+
+# Node and related ecosystem
+# ==========================
+.nodemonignore
+.node-xmlhttprequest-*
+.sass-cache/
+npm-debug.log
+node_modules/
+.bower-*/
+
+# IDE's
+# =====
+.project
+.settings/
+.*.md.html
+.metadata
+*~.nib
+local.properties
+*.iml
+.c9/
+.vs/
+.idea/
+data/
+mongod
+*.sublime-workspace
+
+# Terraform
+# =========
+creds.tfvars
+*.tfstate.backup
+
+# OS-specific
+# ===========
+.DS_Store
+ehthumbs.db
+Icon?
+Thumbs.db
+
+# General
+# =======
+*.log
+*.csv
+*.dat
+*.out
+*.pid
+*.gz
+*.tmp
+*.bak
+*.swp
+logs/
+build/
+app_data/

@@ -1,0 +1,26 @@
+{
+  "name": "apination-stream-utils",
+  "version": "0.1.0",
+  "description": "Stream reading, parsing and writing utils",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha tests/integration/",
+    "doc": "mocha -R markdown tests/integration/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://bitbucket.org/apination/stream-utils.git"
+  },
+  "author": "@stas_natalenko",
+  "license": "ISC",
+  "homepage": "https://bitbucket.org/apination/stream-utils#readme",
+  "dependencies": {
+    "JSONStream": "^1.1.1",
+    "debug": "^2.2.0"
+  },
+  "devDependencies": {
+    "aws-sdk": "^2.3.14",
+    "chai": "^3.5.0",
+    "mocha": "^2.4.5"
+  }
+}
