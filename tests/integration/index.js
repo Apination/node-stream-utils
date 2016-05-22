@@ -1,14 +1,10 @@
 'use strict';
 
-const aws = require('aws-sdk');
 const utils = require('../../src');
-const chai = require('chai');
-const expect = chai.expect;
-const credentials = require('./credentials.json');
-const TRANSACTIONS_URL = 's3://apination-cn-data/staging/cn-example/transactions.json';
+const expect = require('chai').expect;
+const TEST_DATA_SRC = 's3://apination-cn-data/staging/cn-example/transactions.json';
 
-aws.config.update(credentials);
-chai.should();
+require('aws-sdk').config.update(require('./credentials.json'));
 
 describe('stream-utils', function () {
 
@@ -20,12 +16,12 @@ describe('stream-utils', function () {
 		it('loads data from S3', done => {
 
 			const data = [];
-			const stream = utils.createReadStream(TRANSACTIONS_URL);
+			const stream = utils.createReadStream(TEST_DATA_SRC);
 
 			stream.on('data', chunk => data.push(chunk.toString()));
 			stream.on('end', () => {
-				data.should.have.length(1);
-				data[0].should.be.a('String');
+				expect(data).to.have.length(1);
+				expect(data[0]).to.be.a('String');
 				done();
 			});
 		});
@@ -37,12 +33,12 @@ describe('stream-utils', function () {
 		it('loads JSON array from S3', done => {
 
 			const data = [];
-			const stream = utils.createReadArrayStream(TRANSACTIONS_URL);
+			const stream = utils.createReadArrayStream(TEST_DATA_SRC);
 
 			stream.on('data', chunk => data.push(chunk));
 			stream.on('end', () => {
-				data.should.have.length(2);
-				data[0].should.be.an('Object');
+				expect(data).to.have.length(2);
+				expect(data[0]).to.be.a('Object');
 				done();
 			});
 		});
@@ -52,8 +48,8 @@ describe('stream-utils', function () {
 
 		it('writes stream to S3', done => {
 
-			utils.createReadStream(TRANSACTIONS_URL)
-				.pipe(utils.createWriteStream(TRANSACTIONS_URL + '.out.txt', (err, data) => {
+			utils.createReadStream(TEST_DATA_SRC)
+				.pipe(utils.createWriteStream(TEST_DATA_SRC + '.out.txt', (err, data) => {
 					expect(err).to.not.exist;
 					expect(data).to.be.an('Object');
 					expect(data).to.have.property('Bucket', 'apination-cn-data');
@@ -67,8 +63,8 @@ describe('stream-utils', function () {
 
 		it('writes json array to S3', done => {
 
-			utils.createReadArrayStream(TRANSACTIONS_URL)
-				.pipe(utils.createWriteArrayStream(TRANSACTIONS_URL + '.out.json', (err, data) => {
+			utils.createReadArrayStream(TEST_DATA_SRC)
+				.pipe(utils.createWriteArrayStream(TEST_DATA_SRC + '.out.json', (err, data) => {
 					expect(err).to.not.exist;
 					expect(data).to.be.an('Object');
 					expect(data).to.have.property('Bucket', 'apination-cn-data');
@@ -82,7 +78,7 @@ describe('stream-utils', function () {
 
 		it('loads JSON object from S3', () => {
 
-			return utils.loadJson(TRANSACTIONS_URL).then(json => {
+			return utils.loadJson(TEST_DATA_SRC).then(json => {
 				expect(json).to.be.an('Array').that.has.length(2);
 			});
 		});
@@ -93,7 +89,7 @@ describe('stream-utils', function () {
 		it('loads JSON objects from S3, when defined as { $src: "" }', () => {
 
 			const input = {
-				remoteResource: { $src: TRANSACTIONS_URL },
+				remoteResource: { $src: TEST_DATA_SRC },
 				anotherResource: { foo: 'bar' }
 			};
 

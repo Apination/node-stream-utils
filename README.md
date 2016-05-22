@@ -17,9 +17,9 @@ const utils = require('apination-stream-utils');
 loads data from S3.
 
 ```js
-const TRANSACTIONS_URL = 's3://apination-cn-data/staging/cn-example/transactions.json';
+const TEST_DATA_SRC = 's3://apination-cn-data/staging/cn-example/transactions.json';
 const data = [];
-const stream = utils.createReadStream(TRANSACTIONS_URL);
+const stream = utils.createReadStream(TEST_DATA_SRC);
 stream.on('data', chunk => data.push(chunk.toString()));
 stream.on('end', () => {
 	data.should.have.length(1);
@@ -33,7 +33,7 @@ loads JSON array from S3.
 
 ```js
 const data = [];
-const stream = utils.createReadArrayStream(TRANSACTIONS_URL);
+const stream = utils.createReadArrayStream(TEST_DATA_SRC);
 stream.on('data', chunk => data.push(chunk));
 stream.on('end', () => {
 	data.should.have.length(2);
@@ -46,8 +46,8 @@ stream.on('end', () => {
 writes stream to S3.
 
 ```js
-utils.createReadStream(TRANSACTIONS_URL)
-	.pipe(utils.createWriteStream(TRANSACTIONS_URL + '.out.txt', (err, data) => {
+utils.createReadStream(TEST_DATA_SRC)
+	.pipe(utils.createWriteStream(TEST_DATA_SRC + '.out.txt', (err, data) => {
 		expect(err).to.not.exist;
 		expect(data).to.be.an('Object');
 		expect(data).to.have.property('Bucket', 'apination-cn-data');
@@ -59,8 +59,8 @@ utils.createReadStream(TRANSACTIONS_URL)
 writes json array to S3.
 
 ```js
-utils.createReadArrayStream(TRANSACTIONS_URL)
-	.pipe(utils.createWriteArrayStream(TRANSACTIONS_URL + '.out.json', (err, data) => {
+utils.createReadArrayStream(TEST_DATA_SRC)
+	.pipe(utils.createWriteArrayStream(TEST_DATA_SRC + '.out.json', (err, data) => {
 		expect(err).to.not.exist;
 		expect(data).to.be.an('Object');
 		expect(data).to.have.property('Bucket', 'apination-cn-data');
@@ -72,7 +72,7 @@ utils.createReadArrayStream(TRANSACTIONS_URL)
 loads JSON object from S3.
 
 ```js
-utils.loadJson(TRANSACTIONS_URL).then(json => {
+utils.loadJson(TEST_DATA_SRC).then(json => {
 	expect(json).to.be.an('Array').that.has.length(2);
 });
 ```
@@ -82,7 +82,7 @@ loads JSON objects from S3, when defined as { $src: "" }.
 
 ```js
 const input = {
-	remoteResource: { $src: TRANSACTIONS_URL },
+	remoteResource: { $src: TEST_DATA_SRC },
 	anotherResource: { foo: 'bar' }
 };
 utils.loadRemoteResources(input, ['remoteResource', 'anotherResource']).then(obj => {
@@ -94,10 +94,11 @@ utils.loadRemoteResources(input, ['remoteResource', 'anotherResource']).then(obj
 
 ## Dependencies
 
--	package.json (installed automatically with `npm i`)
-	-	[JSONStream](https://www.npmjs.com/package/JSONStream)
-	-	[debug](https://www.npmjs.com/package/debug)
-	-	development
-		-	[aws-sdk](https://www.npmjs.com/package/aws-sdk)
-		-	[mocha](https://www.npmjs.com/package/mocha)
-		-	[chai](https://www.npmjs.com/package/mocha)
+package.json (installed automatically with `npm i`)
+
+-	[JSONStream](https://www.npmjs.com/package/JSONStream)
+-	[debug](https://www.npmjs.com/package/debug)
+-	development
+	-	[aws-sdk](https://www.npmjs.com/package/aws-sdk)
+	-	[mocha](https://www.npmjs.com/package/mocha)
+	-	[chai](https://www.npmjs.com/package/mocha)
