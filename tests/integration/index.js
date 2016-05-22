@@ -49,11 +49,12 @@ describe('stream-utils', function () {
 		it('writes stream to S3', done => {
 
 			utils.createReadStream(TEST_DATA_SRC)
-				.pipe(utils.createWriteStream(TEST_DATA_SRC + '.out.txt', (err, data) => {
+				.pipe(utils.createWriteStream(TEST_DATA_SRC + '.out-', (err, data) => {
 					expect(err).to.not.exist;
 					expect(data).to.be.an('Object');
 					expect(data).to.have.property('Bucket', 'apination-cn-data');
-					expect(data).to.have.property('Key', 'staging/cn-example/transactions.json.out.txt');
+					expect(data).to.have.property('Key');
+					expect(data).to.have.property('$src');
 					done();
 				}));
 		});
@@ -64,11 +65,12 @@ describe('stream-utils', function () {
 		it('writes json array to S3', done => {
 
 			utils.createReadArrayStream(TEST_DATA_SRC)
-				.pipe(utils.createWriteArrayStream(TEST_DATA_SRC + '.out.json', (err, data) => {
+				.pipe(utils.createWriteArrayStream(TEST_DATA_SRC + '.out-', (err, data) => {
 					expect(err).to.not.exist;
 					expect(data).to.be.an('Object');
 					expect(data).to.have.property('Bucket', 'apination-cn-data');
-					expect(data).to.have.property('Key', 'staging/cn-example/transactions.json.out.json');
+					expect(data).to.have.property('Key');
+					expect(data).to.have.property('$src');
 					done();
 				}));
 		});

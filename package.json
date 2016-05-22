@@ -16,7 +16,8 @@
   "homepage": "https://bitbucket.org/apination/node-stream-utils#readme",
   "dependencies": {
     "JSONStream": "^1.1.1",
-    "debug": "^2.2.0"
+    "debug": "^2.2.0",
+    "uuid": "^2.0.2"
   },
   "devDependencies": {
     "aws-sdk": "^2.3.14",

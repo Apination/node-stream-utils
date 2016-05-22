@@ -5,9 +5,11 @@ const aws = require('aws-sdk');
 const debug = require('debug')('apination:stream-reader');
 const PassThrough = require('stream').PassThrough;
 const JSONStream = require('JSONStream');
+const uuid = require('uuid');
 
 const RX_S3 = /^s3:\/\/([^/]+)\/(.+)$/;
 const RX_FILE = /^file:\/\/(.+)$/;
+const RX_DASHES = /-/g;
 const OBJECT_SOURCE_KEY = '$src';
 
 /**
@@ -64,20 +66,23 @@ exports.createWriteStream = function createWriteStream(url, cb) {
 	const s3 = new aws.S3();
 	const params = {
 		Bucket: m[1],
-		Key: m[2],
+		Key: m[2] + uuid.v4().replace(RX_DASHES, ''),
 		Body: passThroughStream,
 		ContentType: 'application/json'
 	};
 
-	debug(`uploading to ${params.Bucket}/${params.Key}...`);
+	const uploadingTo = `s3://${params.Bucket}/${params.Key}`;
+
+	debug(`uploading to ${uploadingTo}...`);
 
 	s3.upload(params, function (err, data) {
 		if (err) {
-			debug(`${url} upload failed`);
+			debug(`${uploadingTo} upload failed`);
 			debug(err);
 		}
 		else {
-			debug(`${url} uploaded`);
+			debug(`${uploadingTo} uploaded`);
+			data[OBJECT_SOURCE_KEY] = uploadingTo;
 		}
 		if (cb) cb(err, data);
 	});
