@@ -13,7 +13,6 @@ npm install git+ssh://git@bitbucket.org:apination/node-stream-utils.git
 const utils = require('apination-stream-utils');
 ```
 
-<a name="stream-utils-createreadstream"></a>
 ## createReadStream()
 loads data from S3.
 
@@ -29,7 +28,6 @@ stream.on('end', () => {
 });
 ```
 
-<a name="stream-utils-createreadarraystream"></a>
 ## createReadArrayStream()
 loads JSON array from S3.
 
@@ -44,7 +42,6 @@ stream.on('end', () => {
 });
 ```
 
-<a name="stream-utils-createwritestream"></a>
 ## createWriteStream()
 writes stream to S3.
 
@@ -58,7 +55,6 @@ utils.createReadStream(TRANSACTIONS_URL)
 	}));
 ```
 
-<a name="stream-utils-createarraywritestream"></a>
 ## createArrayWriteStream()
 writes json array to S3.
 
@@ -72,7 +68,6 @@ utils.createReadArrayStream(TRANSACTIONS_URL)
 	}));
 ```
 
-<a name="stream-utils-loadjson"></a>
 ## loadJson()
 loads JSON object from S3.
 
@@ -82,7 +77,6 @@ utils.loadJson(TRANSACTIONS_URL).then(json => {
 });
 ```
 
-<a name="stream-utils-loadremoteresources"></a>
 ## loadRemoteResources()
 loads JSON objects from S3, when defined as { $src: "" }.
 
