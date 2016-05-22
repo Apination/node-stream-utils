@@ -2,7 +2,7 @@
 
 const fs = require('fs');
 const aws = require('aws-sdk');
-const debug = require('debug')('apination:stream-reader');
+const debug = require('debug')('apination:streams');
 const PassThrough = require('stream').PassThrough;
 const JSONStream = require('JSONStream');
 const uuid = require('uuid');
@@ -72,7 +72,6 @@ exports.createWriteStream = function createWriteStream(url, cb) {
 	};
 
 	const uploadingTo = `s3://${params.Bucket}/${params.Key}`;
-
 	debug(`uploading to ${uploadingTo}...`);
 
 	s3.upload(params, function (err, data) {
