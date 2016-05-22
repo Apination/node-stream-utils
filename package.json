@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "mocha tests/integration/",
-    "doc": "mocha -R markdown tests/integration/"
+    "doc": "mocha -R markdown tests/integration/",
+	"release-patch": "npm version patch && git push --all && git push --tags"
   },
   "repository": {
     "type": "git",
