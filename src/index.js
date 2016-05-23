@@ -7,7 +7,7 @@ const PassThrough = require('stream').PassThrough;
 const JSONStream = require('JSONStream');
 const uuid = require('uuid');
 
-const RX_S3 = /^s3:\/\/([^/]+)\/(.+)$/;
+const RX_S3 = /^(?:s3:\/\/|https:\/\/s3.amazonaws.com\/)([^/]+)\/(.+)$/i;
 const RX_FILE = /^file:\/\/(.+)$/;
 const RX_DASHES = /-/g;
 const OBJECT_SOURCE_KEY = '$src';
@@ -20,20 +20,19 @@ const OBJECT_SOURCE_KEY = '$src';
 exports.createReadStream = function createReadStream(url) {
 	if (typeof url !== 'string' || !url.length) throw new TypeError('url argument must be a non-empty String');
 
-	// TODO: file read must be turned off in production
-
-	if (RX_FILE.test(url)) {
+	if (RX_S3.test(url)) {
+		const m = url.match(RX_S3);
+		const params = {
+			Bucket: m[1],
+			Key: m[2]
+		};
+		const s3 = new aws.S3();
+		return s3.getObject(params).createReadStream();
+	}
+	else if (RX_FILE.test(url)) {
 		const m = url.match(RX_FILE);
 		const fileName = m[1];
 		return fs.createReadStream(fileName);
-	}
-	else if (RX_S3.test(url)) {
-		const m = url.match(RX_S3);
-		const bucketName = m[1];
-		const fileName = m[2];
-		const s3 = new aws.S3();
-
-		return s3.getObject({ Bucket: bucketName, Key: fileName }).createReadStream();
 	}
 	else {
 		throw new Error('Unexpected url format: ' + url);
