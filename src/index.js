@@ -14,10 +14,11 @@ const OBJECT_SOURCE_KEY = '$src';
 
 /**
  * Creates a text read stream for a given url
- * @param	{string}	url	Remote source location in format s3:// or file://
- * @return	{object}	Readable stream
+ * @param {string|{$src:string}} url	Remote source location in format s3:// or file://
+ * @return {object}	Readable stream
  */
 exports.createReadStream = function createReadStream(url) {
+	if (typeof url === 'object' && url && (OBJECT_SOURCE_KEY in url)) url = url[OBJECT_SOURCE_KEY];
 	if (typeof url !== 'string' || !url.length) throw new TypeError('url argument must be a non-empty String');
 
 	if (RX_S3.test(url)) {
