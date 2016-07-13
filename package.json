@@ -1,6 +1,6 @@
 {
   "name": "apination-stream-utils",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "description": "Stream reading, parsing and writing utils",
   "main": "index.js",
   "scripts": {
