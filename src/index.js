@@ -136,7 +136,7 @@ function* createDownloadTasks(input, keys) {
 
 	for (const key of keys) {
 		const value = input[key];
-		const url = OBJECT_SOURCE_KEY in value ? value[OBJECT_SOURCE_KEY] :
+		const url = typeof value === 'object' && (OBJECT_SOURCE_KEY in value) ? value[OBJECT_SOURCE_KEY] :
 			typeof value === 'string' && RX_S3.test(value) ? value : undefined;
 
 		if (url) {
