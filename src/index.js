@@ -130,7 +130,10 @@ function* createDownloadTasks(input, keys) {
 	if (!Array.isArray(keys)) throw new TypeError('keys argument must be an Array');
 
 	for (const key of keys) {
-		const url = input[key] && input[key][OBJECT_SOURCE_KEY];
+		const value = input[key];
+		const url = OBJECT_SOURCE_KEY in value ? value[OBJECT_SOURCE_KEY] :
+			typeof value === 'string' && RX_S3.test(value) ? value : undefined;
+
 		if (url) {
 			debug(`downloading ${key} from ${url}...`);
 
