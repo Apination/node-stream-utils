@@ -5,6 +5,7 @@ const aws = require('aws-sdk');
 const debug = require('debug')('apination:streams');
 const PassThrough = require('stream').PassThrough;
 const JSONStream = require('JSONStream');
+const es = require('event-stream');
 const uuid = require('uuid');
 
 const RX_S3 = /^(?:s3:\/\/|https:\/\/s3.amazonaws.com\/)([^/]+)\/(.+)$/i;
@@ -42,12 +43,16 @@ exports.createReadStream = function createReadStream(url) {
 
 /**
  * Creates an object read stream for a given url
- * @param	{string}	url	Remote source location in format s3:// or file://
+ * @param	{string|any[]}	source	Remote source location in format "s3://..." or Array
  * @return	{object}	Readable object stream
  */
-exports.createReadArrayStream = function createReadArrayStream(url) {
-	return exports.createReadStream(url)
-		.pipe(JSONStream.parse('*'));
+exports.createReadArrayStream = function createReadArrayStream(source) {
+	if (Array.isArray(source)) {
+		return es.readArray(source);
+	}
+	else {
+		return exports.createReadStream(source).pipe(JSONStream.parse('*'));
+	}
 };
 
 /**
