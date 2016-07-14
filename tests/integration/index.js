@@ -100,6 +100,19 @@ describe('stream-utils', function () {
 				expect(obj).to.have.deep.property('anotherResource.foo', 'bar');
 			});
 		});
+
+		it('loads JSON objects from S3, when defined as "s3://..."', () => {
+
+			const input = {
+				remoteResource: TEST_DATA_SRC,
+				anotherResource: 'bar'
+			};
+
+			return utils.loadRemoteResources(input, ['remoteResource', 'anotherResource']).then(obj => {
+				expect(obj).to.have.property('remoteResource').that.is.an('Array').that.has.length(2);
+				expect(obj).to.have.property('anotherResource', 'bar');
+			});
+		});
 	});
 });
 

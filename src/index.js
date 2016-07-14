@@ -66,9 +66,11 @@ exports.createWriteStream = function createWriteStream(url, cb) {
 	if (!RX_S3.test(url)) throw new TypeError('unexpected url argument format: ' + url);
 	if (cb && typeof cb !== 'function') throw new TypeError('cb argument, when provided, must be a Function');
 
-	const m = url.match(RX_S3);
 	const passThroughStream = new PassThrough();
+	if (cb) passThroughStream.on('error', cb);
+
 	const s3 = new aws.S3();
+	const m = url.match(RX_S3);
 	const params = {
 		Bucket: m[1],
 		Key: m[2] + uuid.v4().replace(RX_DASHES, ''),
@@ -119,6 +121,8 @@ exports.loadJson = function loadJson(url) {
 		const stream = exports.createReadStream(url);
 		let r = '';
 
+		stream.on('error', reject);
+
 		stream.on('data', buffer => {
 			r += buffer.toString();
 		});
@@ -137,7 +141,8 @@ function* createDownloadTasks(input, keys) {
 	for (const key of keys) {
 		const value = input[key];
 		const url = typeof value === 'object' && (OBJECT_SOURCE_KEY in value) ? value[OBJECT_SOURCE_KEY] :
-			typeof value === 'string' && key !== 'output' && RX_S3.test(value) ? value : undefined;
+			typeof value === 'string' && RX_S3.test(value) ? value :
+				undefined;
 
 		if (url) {
 			debug(`downloading ${key} from ${url}...`);
