@@ -3,6 +3,7 @@
 const utils = require('../../src');
 const expect = require('chai').expect;
 const TEST_DATA_SRC = 's3://apination-cn-data/staging/cn-example/transactions.json';
+const TEST_DATA_SRC_RANGE = '?offset=3&length=548';
 
 require('aws-sdk').config.update(require('./credentials.json'));
 
@@ -18,10 +19,31 @@ describe('stream-utils', function () {
 			const data = [];
 			const stream = utils.createReadStream(TEST_DATA_SRC);
 
+			stream.on('error', done);
 			stream.on('data', chunk => data.push(chunk.toString()));
 			stream.on('end', () => {
 				expect(data).to.have.length(1);
 				expect(data[0]).to.be.a('String');
+				expect(data[0][0]).to.eq('[');
+				expect(data[0][data[0].length - 2]).to.eq(']');
+				done();
+			});
+		});
+
+		it('downloads PARTIAL data from S3', done => {
+
+			const data = [];
+			const stream = utils.createReadStream(TEST_DATA_SRC + TEST_DATA_SRC_RANGE);
+
+			stream.on('error', done);
+			stream.on('data', chunk => {
+				data.push(chunk.toString());
+			});
+			stream.on('end', () => {
+				expect(data).to.have.length(1);
+				expect(data[0]).to.be.a('String');
+				expect(data[0][0]).to.eq('{');
+				expect(data[0][data[0].length - 1]).to.eq('}');
 				done();
 			});
 		});
@@ -82,6 +104,13 @@ describe('stream-utils', function () {
 
 			return utils.loadJson(TEST_DATA_SRC).then(json => {
 				expect(json).to.be.an('Array').that.has.length(2);
+			});
+		});
+
+		it('loads JSON object ELEMENT from S3 with element range provided', () => {
+			return utils.loadJson(TEST_DATA_SRC + TEST_DATA_SRC_RANGE).then(json => {
+				expect(json).to.not.be.an('Array');
+				expect(json).to.be.an('Object');
 			});
 		});
 	});

@@ -8,7 +8,7 @@ const JSONStream = require('JSONStream');
 const es = require('event-stream');
 const uuid = require('uuid');
 
-const RX_S3 = /^(?:s3:\/\/|https:\/\/s3.amazonaws.com\/)([^/]+)\/(.+)$/i;
+const RX_S3 = /^(?:s3:\/\/|https:\/\/s3.amazonaws.com\/)([^/]+)\/([^?]+)(?:\?offset=(\d+)&length=(\d+))?$/i;
 const RX_FILE = /^file:\/\/(.+)$/;
 const RX_DASHES = /-/g;
 const OBJECT_SOURCE_KEY = '$src';
@@ -24,10 +24,15 @@ exports.createReadStream = function createReadStream(url) {
 
 	if (RX_S3.test(url)) {
 		const m = url.match(RX_S3);
+
+		const offset = m[3] ? +m[3] : null;
+		const length = m[4] ? +m[4] : null;
 		const params = {
 			Bucket: m[1],
-			Key: m[2]
+			Key: m[2],
+			Range: offset !== null && length !== null ? `bytes=${offset}-${offset + length}` : undefined
 		};
+
 		const s3 = new aws.S3();
 		return s3.getObject(params).createReadStream();
 	}
