@@ -1,9 +1,15 @@
 'use strict';
 
+require('debug').enable('apination:*');
+
 const utils = require('../../src');
 const expect = require('chai').expect;
 const TEST_DATA_SRC = 's3://apination-cn-data/staging/cn-example/transactions.json';
 const TEST_DATA_SRC_RANGE = '?offset=3&length=548';
+const TEST_OUTPUT_DESTINATION = {
+	bucketName: 'apination-intermediate-data-stg',
+	keyPrefix: '2001/01/01/00-00-00-000-TEST-'
+};
 
 require('aws-sdk').config.update(require('./credentials.json'));
 
@@ -68,13 +74,20 @@ describe('stream-utils', function () {
 
 	describe('createWriteStream()', () => {
 
+		it('throws TypeError when incorrect arguments received', () => {
+			expect(() => utils.createWriteStream({ bucketName: 'test' })).to.throw(TypeError);
+			expect(() => utils.createWriteStream({ keyPrefix: 'test' })).to.throw(TypeError);
+			expect(() => utils.createWriteStream('')).to.throw(TypeError);
+			expect(() => utils.createWriteStream('s3://test')).to.throw(TypeError);
+		});
+
 		it('writes stream to S3', done => {
 
 			utils.createReadStream(TEST_DATA_SRC)
-				.pipe(utils.createWriteStream(TEST_DATA_SRC + '.out-', (err, data) => {
+				.pipe(utils.createWriteStream(TEST_OUTPUT_DESTINATION, (err, data) => {
 					expect(err).to.not.exist;
 					expect(data).to.be.an('Object');
-					expect(data).to.have.property('Bucket', 'apination-cn-data');
+					expect(data).to.have.property('Bucket', TEST_OUTPUT_DESTINATION.bucketName);
 					expect(data).to.have.property('Key');
 					expect(data).to.have.property('$src');
 					done();
@@ -87,10 +100,10 @@ describe('stream-utils', function () {
 		it('writes json array to S3', done => {
 
 			utils.createReadArrayStream(TEST_DATA_SRC)
-				.pipe(utils.createWriteArrayStream(TEST_DATA_SRC + '.out-', (err, data) => {
+				.pipe(utils.createWriteArrayStream(TEST_OUTPUT_DESTINATION, (err, data) => {
 					expect(err).to.not.exist;
 					expect(data).to.be.an('Object');
-					expect(data).to.have.property('Bucket', 'apination-cn-data');
+					expect(data).to.have.property('Bucket', TEST_OUTPUT_DESTINATION.bucketName);
 					expect(data).to.have.property('Key');
 					expect(data).to.have.property('$src');
 					done();

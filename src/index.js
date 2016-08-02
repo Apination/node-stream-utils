@@ -62,23 +62,37 @@ exports.createReadArrayStream = function createReadArrayStream(source) {
 
 /**
  * Creates a text write stream for a given url
- * @param	{string}	url	Where the data should be uploaded to
+ *
+ * @param	{{bucketName: string, keyPrefix: string}|string}	destination	Where the data should be uploaded to
  * @param 	{Function}	cb	Callback to execute when the upload if complete
  * @return	{object}	Writable stream
  */
-exports.createWriteStream = function createWriteStream(url, cb) {
-	if (typeof url !== 'string' || !url.length) throw new TypeError('url argument must be a non-empty String');
-	if (!RX_S3.test(url)) throw new TypeError('unexpected url argument format: ' + url);
+exports.createWriteStream = function createWriteStream(destination, cb) {
+	if (!destination) throw new TypeError('destination argument required');
+	if (typeof destination === 'string') {
+		const m = destination.match(RX_S3);
+		if (!m) throw new TypeError('unexpected destination format: ' + destination);
+		destination = {
+			bucketName: m[1],
+			keyPrefix: m[2]
+		};
+	}
+	else if (typeof destination === 'object') {
+		if (!destination.bucketName) throw new TypeError('destination.bucketName argument required');
+		if (!destination.keyPrefix) throw new TypeError('destination.keyPrefix argument required');
+	}
+	else {
+		throw new TypeError('destination must be either a String in format "s3://bucketName/keyPrefix" or an Object {bucketName: string, keyPrefix: string}');
+	}
 	if (cb && typeof cb !== 'function') throw new TypeError('cb argument, when provided, must be a Function');
 
 	const passThroughStream = new PassThrough();
 	if (cb) passThroughStream.on('error', cb);
 
 	const s3 = new aws.S3();
-	const m = url.match(RX_S3);
 	const params = {
-		Bucket: m[1],
-		Key: m[2] + uuid.v4().replace(RX_DASHES, ''),
+		Bucket: destination.bucketName,
+		Key: destination.keyPrefix + uuid.v4().replace(RX_DASHES, ''),
 		Body: passThroughStream,
 		ContentType: 'application/json'
 	};
