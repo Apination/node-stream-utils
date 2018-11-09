@@ -92,7 +92,7 @@ exports.createWriteStream = function createWriteStream(destination, cb) {
 	const s3 = new aws.S3();
 	const params = {
 		Bucket: destination.bucketName,
-		Key: (destination.key) ? destination.key : destination.keyPrefix + uuid.v4().replace(RX_DASHES, ''),
+		Key: destination.key ? destination.key : destination.keyPrefix + uuid.v4().replace(RX_DASHES, ''),
 		Body: passThroughStream,
 		ContentType: 'application/json'
 	};
