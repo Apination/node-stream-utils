@@ -5,10 +5,6 @@ Apination Node Stream Utils
 
 A set of helper utils to work with remote streams
 
-```bash
-npm install git+ssh://git@bitbucket.org:apination/node-stream-utils.git --save
-```
-
 ```js
 const utils = require('apination-stream-utils');
 ```
