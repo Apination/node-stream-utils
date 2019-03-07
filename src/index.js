@@ -94,7 +94,7 @@ exports.createWriteStream = function createWriteStream(destination, cb) {
 		Bucket: destination.bucketName,
 		Key: destination.key ? destination.key : destination.keyPrefix + uuid.v4().replace(RX_DASHES, ''),
 		Body: passThroughStream,
-		ContentType: 'application/json'
+		ContentType: destination.contentType ? destination.contentType : 'application/json'
 	};
 
 	const uploadingTo = `s3://${params.Bucket}/${params.Key}`;
