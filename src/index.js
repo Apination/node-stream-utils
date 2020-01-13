@@ -98,7 +98,7 @@ exports.createWriteStream = function createWriteStream(destination, cb) {
 	};
 
 	const uploadingTo = `s3://${params.Bucket}/${params.Key}`;
-	debug(`uploading to ${uploadingTo}...`);
+	// debug(`uploading to ${uploadingTo}...`);
 
 	s3.upload(params, function (err, data) {
 		if (err) {
@@ -106,7 +106,7 @@ exports.createWriteStream = function createWriteStream(destination, cb) {
 			debug(err);
 		}
 		else {
-			debug(`${uploadingTo} uploaded`);
+			// debug(`${uploadingTo} uploaded`);
 			data[OBJECT_SOURCE_KEY] = uploadingTo;
 		}
 		if (cb) cb(err, data);
