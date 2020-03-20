@@ -67,7 +67,7 @@ exports.createReadArrayStream = function createReadArrayStream(source) {
  * @param 	{Function}	cb	Callback to execute when the upload if complete
  * @return	{object}	Writable stream
  */
-exports.createWriteStream = function createWriteStream(destination, cb) {
+exports.createWriteStream = function createWriteStream(destination, cb, throwError = false) {
 	if (!destination) throw new TypeError('destination argument required');
 	if (typeof destination === 'string') {
 		const m = destination.match(RX_S3);
@@ -98,16 +98,25 @@ exports.createWriteStream = function createWriteStream(destination, cb) {
 	};
 
 	const uploadingTo = `s3://${params.Bucket}/${params.Key}`;
-	debug(`uploading to ${uploadingTo}...`);
+	// debug(`uploading to ${uploadingTo}...`);
+
+	passThroughStream.writing = true
+
+	// console.log(passThroughStream)
 
 	s3.upload(params, function (err, data) {
+		passThroughStream.writing = false
 		if (err) {
 			debug(`${uploadingTo} upload failed`);
 			debug(err);
+			if (throwError) {
+				throw err
+			}
 		}
 		else {
-			debug(`${uploadingTo} uploaded`);
+			// debug(`${uploadingTo} uploaded`);
 			data[OBJECT_SOURCE_KEY] = uploadingTo;
+			passThroughStream[OBJECT_SOURCE_KEY] = uploadingTo;
 		}
 		if (cb) cb(err, data);
 	});
@@ -121,9 +130,16 @@ exports.createWriteStream = function createWriteStream(destination, cb) {
  * @param 	{Function}	cb	Callback to execute when the upload if complete
  * @return	{object}	Writable object stream
  */
-exports.createWriteArrayStream = function createWriteArrayStream(url, cb) {
+exports.createWriteArrayStream = function createWriteArrayStream(url, cb, throwError = false) {
 	const stringify = JSONStream.stringify();
-	stringify.pipe(exports.createWriteStream(url, cb));
+	const writeStream = exports.createWriteStream(url, cb, throwError)
+	stringify.pipe(writeStream);
+
+	Object.defineProperty(
+		stringify,
+		'writing', { get: () => writeStream.writing }
+	);
+
 	return stringify;
 };
 
