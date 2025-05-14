@@ -1,6 +1,6 @@
 {
   "name": "apination-stream-utils",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Stream reading, parsing and writing utils",
   "main": "index.js",
   "scripts": {
@@ -11,11 +11,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://bitbucket.org/apination/node-stream-utils.git"
+    "url": "git+https://github.com/apination/node-stream-utils.git"
   },
   "author": "@stas_natalenko",
   "license": "ISC",
-  "homepage": "https://bitbucket.org/apination/node-stream-utils#readme",
+  "homepage": "https://github.com/apination/node-stream-utils#readme",
   "dependencies": {
     "JSONStream": "^1.1.1",
     "debug": "^2.2.0",
