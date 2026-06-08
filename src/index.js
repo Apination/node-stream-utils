@@ -65,9 +65,12 @@ exports.createReadArrayStream = function createReadArrayStream(source) {
  *
  * @param	{{bucketName: string, keyPrefix: string}|string}	destination	Where the data should be uploaded to
  * @param 	{Function}	cb	Callback to execute when the upload if complete
+ * @param	{boolean}	[throwError=false]	Re-throw upload errors instead of swallowing them
+ * @param	{object}	[uploadOptions={}]	Options forwarded to S3 ManagedUpload (e.g. { partSize, queueSize }).
+ *						Defaults to an empty object, which preserves the previous SDK defaults.
  * @return	{object}	Writable stream
  */
-exports.createWriteStream = function createWriteStream(destination, cb, throwError = false) {
+exports.createWriteStream = function createWriteStream(destination, cb, throwError = false, uploadOptions = {}) {
 	if (!destination) throw new TypeError('destination argument required');
 	if (typeof destination === 'string') {
 		const m = destination.match(RX_S3);
@@ -85,6 +88,7 @@ exports.createWriteStream = function createWriteStream(destination, cb, throwErr
 		throw new TypeError('destination must be either a String in format "s3://bucketName/keyPrefix" or an Object {bucketName: string, keyPrefix: string}');
 	}
 	if (cb && typeof cb !== 'function') throw new TypeError('cb argument, when provided, must be a Function');
+	if (uploadOptions === null || typeof uploadOptions !== 'object') throw new TypeError('uploadOptions argument, when provided, must be an Object');
 
 	const passThroughStream = new PassThrough();
 	if (cb) passThroughStream.on('error', cb);
@@ -104,7 +108,7 @@ exports.createWriteStream = function createWriteStream(destination, cb, throwErr
 
 	// console.log(passThroughStream)
 
-	s3.upload(params, function (err, data) {
+	s3.upload(params, uploadOptions, function (err, data) {
 		passThroughStream.writing = false
 		if (err) {
 			debug(`${uploadingTo} upload failed`);
@@ -128,11 +132,13 @@ exports.createWriteStream = function createWriteStream(destination, cb, throwErr
  * Creates an object write stream for a given url
  * @param	{string}	url	Where the data should be uploaded to
  * @param 	{Function}	cb	Callback to execute when the upload if complete
+ * @param	{boolean}	[throwError=false]	Re-throw upload errors instead of swallowing them
+ * @param	{object}	[uploadOptions={}]	Options forwarded to S3 ManagedUpload (e.g. { partSize, queueSize })
  * @return	{object}	Writable object stream
  */
-exports.createWriteArrayStream = function createWriteArrayStream(url, cb, throwError = false) {
+exports.createWriteArrayStream = function createWriteArrayStream(url, cb, throwError = false, uploadOptions = {}) {
 	const stringify = JSONStream.stringify();
-	const writeStream = exports.createWriteStream(url, cb, throwError)
+	const writeStream = exports.createWriteStream(url, cb, throwError, uploadOptions)
 	stringify.pipe(writeStream);
 
 	Object.defineProperty(

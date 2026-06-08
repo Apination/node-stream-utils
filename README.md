@@ -51,6 +51,22 @@ utils.createReadStream(TEST_DATA_SRC)
 	}));
 ```
 
+### Upload options (`partSize` / `queueSize`)
+
+`createWriteStream(destination, cb, throwError, uploadOptions)` accepts an
+optional 4th argument that is forwarded verbatim to the S3
+[ManagedUpload](https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#upload-property).
+It is fully backward compatible — when omitted, the previous SDK defaults
+(`partSize` 5 MB, `queueSize` 4) apply. Use it to bound peak memory when
+uploading many large objects concurrently:
+
+```js
+// Cap the in-flight multipart buffer per upload (~partSize * queueSize).
+utils.createWriteStream(destination, cb, false, { partSize: 5 * 1024 * 1024, queueSize: 2 });
+```
+
+`createWriteArrayStream()` accepts the same optional `uploadOptions` argument.
+
 ## createArrayWriteStream()
 writes json array to S3.
 

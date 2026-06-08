@@ -1,10 +1,11 @@
 {
   "name": "apination-stream-utils",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Stream reading, parsing and writing utils",
   "main": "index.js",
   "scripts": {
     "test": "mocha tests/integration/",
+    "test:unit": "mocha tests/unit/",
     "doc": "mocha -R markdown tests/integration/",
     "release-patch": "npm version patch && git push --all && git push --tags",
     "release-minor": "npm version minor && git push --all && git push --tags"
