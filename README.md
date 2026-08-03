@@ -130,6 +130,10 @@ package.json (installed automatically with `npm i`)
 
 -	[JSONStream](https://www.npmjs.com/package/JSONStream)
 -	[debug](https://www.npmjs.com/package/debug)
+-	peer — supplied by the consumer, required by the entry point at load time
+	-	[aws-sdk](https://www.npmjs.com/package/aws-sdk) v2. Declared as a peer rather
+		than a dependency because the Lambda runtime already provides it, and
+		shipping it would add the whole SDK to every consumer bundle.
 -	development
 	-	[aws-sdk](https://www.npmjs.com/package/aws-sdk)
 	-	[mocha](https://www.npmjs.com/package/mocha)

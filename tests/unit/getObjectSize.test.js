@@ -32,6 +32,15 @@ function restoreS3() {
 
 const utils = require('../../src');
 
+// Asserts the rejection channel specifically: a synchronous throw from
+// getObjectSize would fail this helper at the call, before .then is attached.
+function expectRejection(url, pattern) {
+	return utils.getObjectSize(url).then(
+		() => { throw new Error('expected a rejection for ' + JSON.stringify(url)); },
+		err => expect(err.message).to.match(pattern)
+	);
+}
+
 describe('getObjectSize()', () => {
 
 	beforeEach(installS3Stub);
@@ -71,7 +80,13 @@ describe('getObjectSize()', () => {
 	// `bytes=offset-(offset+length)` — one byte more than length. Neither the whole
 	// object size nor length matches the stream, so this must fail loudly.
 	it('rejects a range url instead of returning a size that would not match the stream', () => {
-		expect(() => utils.getObjectSize('s3://test-bucket/file.pdf?offset=0&length=100')).to.throw(/range urls/);
+		return expectRejection('s3://test-bucket/file.pdf?offset=0&length=100', /range urls/);
+	});
+
+	// RX_FILE is greedy, so without a check ahead of the branch the range suffix ends
+	// up inside the path and the caller gets ENOENT for a file that never existed.
+	it('rejects a range url on a file:// path too, not ENOENT for a glued-on suffix', () => {
+		return expectRejection('file:///tmp/probe.bin?offset=0&length=100', /range urls/);
 	});
 
 	// Returning 0 would read as "small" to a caller routing by size, which is the
@@ -79,19 +94,47 @@ describe('getObjectSize()', () => {
 	it('rejects when S3 reports no ContentLength rather than reporting zero', () => {
 		headObjectResult = {};
 
-		return utils.getObjectSize('s3://test-bucket/file.pdf').then(
-			() => { throw new Error('expected rejection'); },
-			err => expect(err.message).to.match(/no ContentLength/)
+		return expectRejection('s3://test-bucket/file.pdf', /no ContentLength/);
+	});
+
+	// The guard is `=== undefined || === null` rather than falsy on purpose. A
+	// "simplification" to `if (!head.ContentLength)` would turn every empty object
+	// into a hard failure, and this is the only test that would catch it.
+	it('returns 0 for an object that is genuinely empty', () => {
+		headObjectResult = { ContentLength: 0 };
+
+		return utils.getObjectSize('s3://test-bucket/empty').then(size => {
+			expect(size).to.equal(0);
+		});
+	});
+
+	it('propagates a headObject failure as a rejection', () => {
+		const failure = new Error('Access Denied');
+		failure.code = 'AccessDenied';
+		aws.S3 = function S3Stub() {
+			return { headObject: () => ({ promise: () => Promise.reject(failure) }) };
+		};
+
+		return expectRejection('s3://test-bucket/file.pdf', /Access Denied/);
+	});
+
+	// Every failure mode is a rejection, not a synchronous throw: a caller writing
+	// `.then(...).catch(handle)` must reach `handle` for all of them.
+	it('rejects rather than throws on a missing file:// path', () => {
+		return expectRejection('file:///definitely/not/here.pdf', /ENOENT/);
+	});
+
+	// Still a TypeError, just delivered through the rejection channel now.
+	it('rejects with TypeError on a missing or non-string url', () => {
+		const assertTypeError = url => utils.getObjectSize(url).then(
+			() => { throw new Error('expected a rejection for ' + JSON.stringify(url)); },
+			err => expect(err).to.be.an.instanceOf(TypeError)
 		);
+
+		return Promise.all([assertTypeError(undefined), assertTypeError(''), assertTypeError(42)]);
 	});
 
-	it('throws TypeError on a missing or non-string url', () => {
-		expect(() => utils.getObjectSize()).to.throw(TypeError);
-		expect(() => utils.getObjectSize('')).to.throw(TypeError);
-		expect(() => utils.getObjectSize(42)).to.throw(TypeError);
-	});
-
-	it('throws on an unsupported url format', () => {
-		expect(() => utils.getObjectSize('https://example.com/file.pdf')).to.throw(/Unexpected url format/);
+	it('rejects on an unsupported url format', () => {
+		return expectRejection('https://example.com/file.pdf', /Unexpected url format/);
 	});
 });
