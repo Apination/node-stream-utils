@@ -76,17 +76,20 @@ describe('getObjectSize()', () => {
 		});
 	});
 
-	// createReadStream emits only the requested slice, and asks S3 for
-	// `bytes=offset-(offset+length)` — one byte more than length. Neither the whole
-	// object size nor length matches the stream, so this must fail loudly.
-	it('rejects a range url instead of returning a size that would not match the stream', () => {
-		return expectRejection('s3://test-bucket/file.pdf?offset=0&length=100', /range urls/);
+	// createReadStream emits exactly `length` bytes for a range url, so the url
+	// already states the size and no request is needed to answer.
+	it('answers a range url from the url itself, without calling S3', () => {
+		return utils.getObjectSize('s3://test-bucket/payload.json?offset=2706&length=332').then(size => {
+			expect(size).to.equal(332);
+			expect(lastHeadObject).to.equal(null);
+		});
 	});
 
-	// RX_FILE is greedy, so without a check ahead of the branch the range suffix ends
-	// up inside the path and the caller gets ENOENT for a file that never existed.
-	it('rejects a range url on a file:// path too, not ENOENT for a glued-on suffix', () => {
-		return expectRejection('file:///tmp/probe.bin?offset=0&length=100', /range urls/);
+	// RX_FILE is greedy, so the range suffix would end up inside the path and the
+	// caller would get ENOENT for a file that never existed. createReadStream does not
+	// honour ranges for file:// either, so refusing is the honest answer.
+	it('rejects a range url on a file:// path, rather than ENOENT for a glued-on suffix', () => {
+		return expectRejection('file:///tmp/probe.bin?offset=0&length=100', /range urls for file:\/\//);
 	});
 
 	// Returning 0 would read as "small" to a caller routing by size, which is the

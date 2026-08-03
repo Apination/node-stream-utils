@@ -41,8 +41,10 @@ if (size > 25 * 1024 * 1024) {
 }
 ```
 
-Range locations (`?offset=&length=`) are rejected: `createReadStream()` emits only
-that slice, so no single size would describe both the object and the stream.
+It answers for the stream `createReadStream()` would produce. A range location
+(`?offset=&length=`) therefore returns its `length`, with no request made at all.
+Ranges on `file://` locations are rejected, because `createReadStream()` does not
+honour them there either.
 
 ## createReadArrayStream()
 loads JSON array from S3.
