@@ -24,6 +24,26 @@ stream.on('end', () => {
 });
 ```
 
+## getObjectSize()
+returns the size of an object in bytes without downloading it. Accepts the same
+locations as `createReadStream()` — `s3://`, `https://s3.amazonaws.com/`,
+`file://`, and the `{ $src }` envelope. For S3 this is a `headObject` call, so
+only metadata is transferred.
+
+Use it to decide how to send a file before sending it, for example choosing
+between a single request and a chunked or signed upload flow.
+
+```js
+const size = await utils.getObjectSize(TEST_DATA_SRC);
+
+if (size > 25 * 1024 * 1024) {
+	// too large for one request — use the signed upload flow
+}
+```
+
+Range locations (`?offset=&length=`) are rejected: `createReadStream()` emits only
+that slice, so no single size would describe both the object and the stream.
+
 ## createReadArrayStream()
 loads JSON array from S3.
 

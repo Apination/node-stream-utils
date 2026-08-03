@@ -47,6 +47,51 @@ exports.createReadStream = function createReadStream(url) {
 };
 
 /**
+ * Returns the size in bytes of an object, without downloading it.
+ *
+ * Accepts every location form createReadStream accepts - an s3:// uri, the
+ * https://s3.amazonaws.com/ equivalent, a file:// path, and the { $src } envelope
+ * upstream steps wrap one in - so that anything streamable is also sizeable.
+ * For S3 this is a headObject call: metadata only, no body transferred.
+ *
+ * @param {string|{$src:string}} url	Remote source location in format s3:// or file://
+ * @return {Promise<number>}	Size of the object in bytes
+ */
+exports.getObjectSize = function getObjectSize(url) {
+	if (typeof url === 'object' && url && (OBJECT_SOURCE_KEY in url)) url = url[OBJECT_SOURCE_KEY];
+	if (typeof url !== 'string' || !url.length) throw new TypeError('url argument must be a non-empty String');
+
+	if (RX_S3.test(url)) {
+		const m = url.match(RX_S3);
+
+		// For a range url createReadStream emits only that slice, and it asks S3 for
+		// `bytes=offset-(offset+length)` - one byte more than length. No single number
+		// describes both the whole object and that stream, so refuse rather than guess.
+		if (m[3]) throw new Error('getObjectSize does not support range urls: ' + url);
+
+		const s3 = new aws.S3();
+
+		return s3.headObject({ Bucket: m[1], Key: m[2] }).promise()
+			.then(head => {
+				// Callers gate "small enough to send in one request" on this number, so
+				// an unknown size must never read as 0.
+				if (head.ContentLength === undefined || head.ContentLength === null) {
+					throw new Error('Object reported no ContentLength: ' + url);
+				}
+
+				return head.ContentLength;
+			});
+	}
+	else if (RX_FILE.test(url)) {
+		const m = url.match(RX_FILE);
+		return Promise.resolve(fs.statSync(m[1]).size);
+	}
+	else {
+		throw new Error('Unexpected url format: ' + url);
+	}
+};
+
+/**
  * Creates an object read stream for a given url
  * @param	{string|any[]}	source	Remote source location in format "s3://..." or Array
  * @return	{object}	Readable object stream
