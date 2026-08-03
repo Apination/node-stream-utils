@@ -10,6 +10,7 @@ const uuid = require('uuid');
 
 const RX_S3 = /^(?:s3:\/\/|https:\/\/s3.amazonaws.com\/)([^/]+)\/([^?]+)(?:\?offset=(\d+)&length=(\d+))?$/i;
 const RX_FILE = /^file:\/\/(.+)$/;
+const RX_RANGE = /[?&]offset=\d+&length=\d+$/i;
 const RX_DASHES = /-/g;
 const OBJECT_SOURCE_KEY = '$src';
 
@@ -30,7 +31,13 @@ exports.createReadStream = function createReadStream(url) {
 		const params = {
 			Bucket: m[1],
 			Key: m[2],
-			Range: offset !== null && length !== null ? `bytes=${offset}-${offset + length}` : undefined
+			// An HTTP byte range is inclusive at both ends, so the last byte of a
+			// `length`-byte slice is at `offset + length - 1`. Asking for
+			// `offset + length` returned one byte too many on every range read. It went
+			// unnoticed because the writers of these ranges separate records with a
+			// newline and JSON.parse ignores trailing whitespace - it would corrupt any
+			// range whose next byte is not whitespace.
+			Range: offset !== null && length !== null ? `bytes=${offset}-${offset + length - 1}` : undefined
 		};
 
 		const s3 = new aws.S3();
@@ -40,6 +47,68 @@ exports.createReadStream = function createReadStream(url) {
 		const m = url.match(RX_FILE);
 		const fileName = m[1];
 		return fs.createReadStream(fileName);
+	}
+	else {
+		throw new Error('Unexpected url format: ' + url);
+	}
+};
+
+/**
+ * Returns the size in bytes of an object, without downloading it.
+ *
+ * Accepts every location form createReadStream accepts - an s3:// uri, the
+ * https://s3.amazonaws.com/ equivalent, a file:// path, and the { $src } envelope
+ * upstream steps wrap one in - so that anything streamable is also sizeable.
+ * For S3 this is a headObject call: metadata only, no body transferred.
+ *
+ * Answers for the stream createReadStream would produce, which for a range url is
+ * its `length` and needs no request at all. Ranges on file:// locations are refused,
+ * because createReadStream does not honour them there either.
+ *
+ * `async` so that every failure - a bad argument, an unsupported location, a
+ * missing local file, an S3 error - reaches the caller as a rejection. A caller
+ * writing `getObjectSize(src).then(...).catch(handle)` must not have some of these
+ * escape past `handle` because they were thrown while evaluating the argument.
+ *
+ * @param {string|{$src:string}} url	Remote source location in format s3:// or file://
+ * @return {Promise<number>}	Size of the object in bytes
+ */
+exports.getObjectSize = async function getObjectSize(url) {
+	if (typeof url === 'object' && url && (OBJECT_SOURCE_KEY in url)) url = url[OBJECT_SOURCE_KEY];
+	if (typeof url !== 'string' || !url.length) throw new TypeError('url argument must be a non-empty String');
+
+	if (RX_S3.test(url)) {
+		const m = url.match(RX_S3);
+
+		// A range url describes its own size: createReadStream emits exactly that
+		// many bytes, so answering from the url is both correct and free of a request.
+		if (m[4]) return +m[4];
+
+		debug(`sizing s3://${m[1]}/${m[2]}...`);
+
+		const s3 = new aws.S3();
+		const head = await s3.headObject({ Bucket: m[1], Key: m[2] }).promise();
+
+		// Callers gate "small enough to send in one request" on this number, so an
+		// unknown size must never read as 0 - while a genuinely empty object must.
+		if (head.ContentLength === undefined || head.ContentLength === null) {
+			throw new Error('Object reported no ContentLength: ' + url);
+		}
+
+		debug(`s3://${m[1]}/${m[2]} is ${head.ContentLength} bytes`);
+
+		return head.ContentLength;
+	}
+	else if (RX_FILE.test(url)) {
+		// RX_FILE is greedy, so a range suffix ends up inside the path. createReadStream
+		// does not honour ranges for file:// either, so refusing is honest - otherwise
+		// the caller gets ENOENT naming a file that never existed.
+		if (RX_RANGE.test(url)) {
+			throw new Error('getObjectSize does not support range urls for file:// locations: ' + url);
+		}
+
+		const m = url.match(RX_FILE);
+		return fs.statSync(m[1]).size;
 	}
 	else {
 		throw new Error('Unexpected url format: ' + url);
