@@ -229,16 +229,18 @@ exports.loadJson = function loadJson(url) {
 	return new Promise(function (resolve, reject) {
 
 		const stream = exports.createReadStream(url);
-		let r = '';
+		const chunks = [];
 
 		stream.on('error', reject);
 
-		stream.on('data', buffer => {
-			r += buffer.toString();
+		// Decoding each chunk on its own turns a UTF-8 character split across two
+		// chunks into U+FFFD, so the bytes are joined first and decoded once.
+		stream.on('data', chunk => {
+			chunks.push(chunk);
 		});
 
 		stream.on('end', () => {
-			resolve(JSON.parse(r));
+			resolve(JSON.parse(Buffer.concat(chunks).toString('utf8')));
 		});
 	});
 };
